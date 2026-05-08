@@ -1,1 +1,568 @@
-{}
+{
+  "commands": {
+    "rm": {
+      "base_risk": "caution",
+      "description": "Removes files or directories",
+      "flags": {
+        "-r": {
+          "risk": "destructive",
+          "note": "Recursive — deletes entire directory trees"
+        },
+        "-rf": {
+          "risk": "destructive",
+          "note": "Recursive + force, no confirmation, no mercy"
+        },
+        "-f": {
+          "risk": "caution",
+          "note": "Force — skips confirmation prompts"
+        },
+        "--no-preserve-root": {
+          "risk": "irreversible",
+          "note": "Allows deleting root filesystem — system killer"
+        }
+      }
+    },
+    "dd": {
+      "base_risk": "irreversible",
+      "description": "Converts and copies files at block level",
+      "always_warn": true,
+      "note": "Operates directly on block devices — one typo wipes a disk"
+    },
+    "mkfs": {
+      "base_risk": "irreversible",
+      "description": "Creates a new filesystem on a device",
+      "always_warn": true,
+      "note": "Formats a disk partition — destroys all existing data"
+    },
+    "fdisk": {
+      "base_risk": "destructive",
+      "description": "Partition table manipulator",
+      "note": "Modifying partitions can make data inaccessible"
+    },
+    "chmod": {
+      "base_risk": "caution",
+      "description": "Changes file permissions",
+      "flags": {
+        "-R": {
+          "risk": "caution",
+          "note": "Recursive — applies to all files in directory tree"
+        }
+      },
+      "patterns": [
+        {
+          "match": "777",
+          "risk": "destructive",
+          "note": "World-writable: any process can modify these files"
+        },
+        {
+          "match": "666",
+          "risk": "caution",
+          "note": "World-writable (no execute): security risk"
+        }
+      ]
+    },
+    "chown": {
+      "base_risk": "caution",
+      "description": "Changes file owner and group",
+      "flags": {
+        "-R": {
+          "risk": "caution",
+          "note": "Recursive ownership change across directory tree"
+        }
+      }
+    },
+    "mv": {
+      "base_risk": "caution",
+      "description": "Moves or renames files",
+      "note": "Overwrites destination without warning if it already exists"
+    },
+    "wget": {
+      "base_risk": "caution",
+      "description": "Downloads files from the internet",
+      "flags": {
+        "-O": {
+          "risk": "caution",
+          "note": "Output to specific file — watch where it writes"
+        }
+      }
+    },
+    "curl": {
+      "base_risk": "safe",
+      "description": "Transfers data from/to a server",
+      "flags": {
+        "-o": {
+          "risk": "caution",
+          "note": "Writes output to file"
+        }
+      }
+    },
+    "git": {
+      "base_risk": "safe",
+      "description": "Version control operations",
+      "subcommands": {
+        "push": {
+          "risk": "caution",
+          "note": "Sends commits to remote — irreversible if force pushed"
+        },
+        "reset": {
+          "risk": "caution",
+          "note": "Resets HEAD — can lose uncommitted work"
+        },
+        "clean": {
+          "risk": "destructive",
+          "note": "Removes untracked files permanently"
+        },
+        "push --force": {
+          "risk": "destructive",
+          "note": "Force push rewrites remote history — affects all collaborators"
+        }
+      }
+    },
+    "sudo": {
+      "base_risk": "caution",
+      "description": "Runs a command as superuser",
+      "note": "Elevates privileges — mistakes have system-wide consequences"
+    },
+    "su": {
+      "base_risk": "caution",
+      "description": "Switches user identity",
+      "note": "Running as root removes all safety guardrails"
+    },
+    "kill": {
+      "base_risk": "caution",
+      "description": "Sends a signal to a process",
+      "flags": {
+        "-9": {
+          "risk": "caution",
+          "note": "SIGKILL — forcefully terminates, no cleanup"
+        }
+      }
+    },
+    "killall": {
+      "base_risk": "caution",
+      "description": "Kills all processes by name",
+      "note": "Kills every process matching the name — can take down system services"
+    },
+    "pkill": {
+      "base_risk": "caution",
+      "description": "Kills processes matching a pattern"
+    },
+    "iptables": {
+      "base_risk": "destructive",
+      "description": "Configures Linux kernel firewall",
+      "note": "Misconfigured rules can lock you out of a remote server"
+    },
+    "ufw": {
+      "base_risk": "caution",
+      "description": "Uncomplicated firewall manager"
+    },
+    "systemctl": {
+      "base_risk": "caution",
+      "description": "Controls systemd services",
+      "subcommands": {
+        "stop": {
+          "risk": "caution",
+          "note": "Stops a running service"
+        },
+        "disable": {
+          "risk": "caution",
+          "note": "Prevents service from starting on boot"
+        },
+        "mask": {
+          "risk": "destructive",
+          "note": "Completely blocks a service from starting"
+        }
+      }
+    },
+    "service": {
+      "base_risk": "caution",
+      "description": "Manages system services (legacy)"
+    },
+    "crontab": {
+      "base_risk": "caution",
+      "description": "Manages scheduled tasks",
+      "flags": {
+        "-r": {
+          "risk": "destructive",
+          "note": "Removes ALL cron jobs for the user — no confirmation"
+        }
+      }
+    },
+    "passwd": {
+      "base_risk": "caution",
+      "description": "Changes user password"
+    },
+    "useradd": {
+      "base_risk": "caution",
+      "description": "Creates a new user account"
+    },
+    "userdel": {
+      "base_risk": "destructive",
+      "description": "Deletes a user account and optionally their home directory"
+    },
+    "usermod": {
+      "base_risk": "caution",
+      "description": "Modifies a user account"
+    },
+    "mount": {
+      "base_risk": "caution",
+      "description": "Mounts a filesystem"
+    },
+    "umount": {
+      "base_risk": "caution",
+      "description": "Unmounts a filesystem"
+    },
+    "fsck": {
+      "base_risk": "destructive",
+      "description": "Checks and repairs filesystem — run only when unmounted"
+    },
+    "shred": {
+      "base_risk": "irreversible",
+      "description": "Overwrites a file to hide its contents — unrecoverable"
+    },
+    "truncate": {
+      "base_risk": "destructive",
+      "description": "Shrinks or extends a file size — data past new size is lost"
+    },
+    "ln": {
+      "base_risk": "safe",
+      "description": "Creates file links",
+      "flags": {
+        "-sf": {
+          "risk": "caution",
+          "note": "Force symlink creation — silently replaces existing file"
+        }
+      }
+    },
+    "find": {
+      "base_risk": "safe",
+      "description": "Searches for files",
+      "flags": {
+        "-delete": {
+          "risk": "destructive",
+          "note": "Deletes every file matching the search — no undo"
+        },
+        "-exec rm": {
+          "risk": "destructive",
+          "note": "Runs rm on every matched file"
+        }
+      }
+    },
+    "xargs": {
+      "base_risk": "caution",
+      "description": "Builds and executes commands from stdin",
+      "note": "Multiplies the effect of whatever command follows — scope can be massive"
+    },
+    "apt": {
+      "base_risk": "safe",
+      "description": "Debian package manager"
+    },
+    "apt-get": {
+      "base_risk": "safe",
+      "description": "Debian package manager (classic)"
+    },
+    "yum": {
+      "base_risk": "safe",
+      "description": "RPM-based package manager"
+    },
+    "dnf": {
+      "base_risk": "safe",
+      "description": "Fedora package manager"
+    },
+    "pip": {
+      "base_risk": "safe",
+      "description": "Python package installer"
+    },
+    "npm": {
+      "base_risk": "safe",
+      "description": "Node.js package manager"
+    },
+    "ls": {
+      "base_risk": "safe",
+      "description": "Lists directory contents"
+    },
+    "cat": {
+      "base_risk": "safe",
+      "description": "Prints file contents"
+    },
+    "echo": {
+      "base_risk": "safe",
+      "description": "Prints text to stdout"
+    },
+    "pwd": {
+      "base_risk": "safe",
+      "description": "Prints working directory"
+    },
+    "cd": {
+      "base_risk": "safe",
+      "description": "Changes current directory"
+    },
+    "mkdir": {
+      "base_risk": "safe",
+      "description": "Creates directories"
+    },
+    "cp": {
+      "base_risk": "safe",
+      "description": "Copies files or directories"
+    },
+    "grep": {
+      "base_risk": "safe",
+      "description": "Searches text patterns in files"
+    },
+    "sed": {
+      "base_risk": "caution",
+      "description": "Stream editor — can modify files in-place with -i"
+    },
+    "awk": {
+      "base_risk": "safe",
+      "description": "Pattern scanning and processing language"
+    },
+    "ssh": {
+      "base_risk": "safe",
+      "description": "Connects to remote server via SSH"
+    },
+    "scp": {
+      "base_risk": "safe",
+      "description": "Copies files over SSH"
+    },
+    "rsync": {
+      "base_risk": "caution",
+      "description": "Syncs files/directories — --delete flag removes destination files not in source"
+    },
+    "tar": {
+      "base_risk": "safe",
+      "description": "Archives files"
+    },
+    "zip": {
+      "base_risk": "safe",
+      "description": "Compresses files into a zip archive"
+    },
+    "unzip": {
+      "base_risk": "safe",
+      "description": "Extracts zip archives"
+    },
+    "python": {
+      "base_risk": "safe",
+      "description": "Python interpreter"
+    },
+    "python3": {
+      "base_risk": "safe",
+      "description": "Python 3 interpreter"
+    },
+    "node": {
+      "base_risk": "safe",
+      "description": "Node.js runtime"
+    },
+    "bash": {
+      "base_risk": "caution",
+      "description": "Bash shell — running scripts from untrusted sources is dangerous"
+    },
+    "sh": {
+      "base_risk": "caution",
+      "description": "Shell interpreter"
+    },
+    "env": {
+      "base_risk": "safe",
+      "description": "Prints or sets environment variables"
+    },
+    "export": {
+      "base_risk": "safe",
+      "description": "Sets environment variables"
+    },
+    "source": {
+      "base_risk": "caution",
+      "description": "Executes a script in the current shell context"
+    },
+    "history": {
+      "base_risk": "safe",
+      "description": "Shows command history"
+    },
+    "man": {
+      "base_risk": "safe",
+      "description": "Shows manual page for a command"
+    },
+    "which": {
+      "base_risk": "safe",
+      "description": "Locates a command executable"
+    },
+    "whereis": {
+      "base_risk": "safe",
+      "description": "Locates the binary, source, and manual for a command"
+    },
+    "df": {
+      "base_risk": "safe",
+      "description": "Shows disk space usage"
+    },
+    "du": {
+      "base_risk": "safe",
+      "description": "Shows directory space usage"
+    },
+    "top": {
+      "base_risk": "safe",
+      "description": "Shows real-time system processes"
+    },
+    "htop": {
+      "base_risk": "safe",
+      "description": "Interactive process viewer"
+    },
+    "ps": {
+      "base_risk": "safe",
+      "description": "Shows running processes"
+    },
+    "free": {
+      "base_risk": "safe",
+      "description": "Shows memory usage"
+    },
+    "uname": {
+      "base_risk": "safe",
+      "description": "Prints system information"
+    },
+    "whoami": {
+      "base_risk": "safe",
+      "description": "Prints current user name"
+    },
+    "id": {
+      "base_risk": "safe",
+      "description": "Prints user and group IDs"
+    },
+    "date": {
+      "base_risk": "safe",
+      "description": "Prints or sets the system date"
+    },
+    "ping": {
+      "base_risk": "safe",
+      "description": "Tests network connectivity"
+    },
+    "ifconfig": {
+      "base_risk": "safe",
+      "description": "Configures network interfaces (legacy)"
+    },
+    "ip": {
+      "base_risk": "safe",
+      "description": "Shows/manipulates routing and network devices"
+    },
+    "netstat": {
+      "base_risk": "safe",
+      "description": "Shows network connections"
+    },
+    "nmap": {
+      "base_risk": "caution",
+      "description": "Network scanner — scanning others' networks may be illegal"
+    }
+  },
+  "pipe_patterns": [
+    {
+      "pattern": "curl.*\\|.*bash",
+      "risk": "irreversible",
+      "signal": "Remote code execution: downloads and runs untrusted script as-is"
+    },
+    {
+      "pattern": "wget.*\\|.*bash",
+      "risk": "irreversible",
+      "signal": "Remote code execution: downloads and runs untrusted script as-is"
+    },
+    {
+      "pattern": "curl.*\\|.*sh",
+      "risk": "irreversible",
+      "signal": "Remote code execution via shell — cannot inspect before running"
+    },
+    {
+      "pattern": "wget.*\\|.*sh",
+      "risk": "irreversible",
+      "signal": "Remote code execution via shell — cannot inspect before running"
+    },
+    {
+      "pattern": ".*\\|.*sudo",
+      "risk": "destructive",
+      "signal": "Piping into sudo: the piped output runs with root privileges"
+    }
+  ],
+  "path_patterns": [
+    {
+      "pattern": "/dev/sd",
+      "risk": "irreversible",
+      "signal": "Writes to raw disk device — can destroy filesystem"
+    },
+    {
+      "pattern": "/dev/zero",
+      "risk": "irreversible",
+      "signal": "Zero-fill source — usually used to wipe disks"
+    },
+    {
+      "pattern": "/dev/null",
+      "risk": "safe",
+      "signal": "Null device — discards output safely"
+    },
+    {
+      "pattern": "/etc/",
+      "risk": "destructive",
+      "signal": "System config directory — changes affect all users"
+    },
+    {
+      "pattern": "/boot/",
+      "risk": "irreversible",
+      "signal": "Boot partition — corruption can make system unbootable"
+    },
+    {
+      "pattern": "/usr/",
+      "risk": "destructive",
+      "signal": "System programs directory — modifying can break installed software"
+    },
+    {
+      "pattern": "/bin/",
+      "risk": "destructive",
+      "signal": "Core binaries directory — modifying can break the system"
+    },
+    {
+      "pattern": "/sbin/",
+      "risk": "destructive",
+      "signal": "System binaries — modifying can break the system"
+    },
+    {
+      "pattern": "/proc/",
+      "risk": "caution",
+      "signal": "Kernel process filesystem — writes affect running system"
+    },
+    {
+      "pattern": "/sys/",
+      "risk": "caution",
+      "signal": "Kernel device filesystem — writes affect hardware config"
+    },
+    {
+      "pattern": "/tmp/",
+      "risk": "safe",
+      "signal": "Temporary directory — operations here are lower risk"
+    },
+    {
+      "pattern": "/var/log/",
+      "risk": "caution",
+      "signal": "Log directory — deleting may erase audit trails"
+    }
+  ],
+  "risk_levels": {
+    "safe": {
+      "label": "Safe",
+      "color": "green",
+      "icon": "✓",
+      "action": "Safe to run"
+    },
+    "caution": {
+      "label": "Caution",
+      "color": "yellow",
+      "icon": "⚠",
+      "action": "Review before running"
+    },
+    "destructive": {
+      "label": "Destructive",
+      "color": "red",
+      "icon": "✗",
+      "action": "Data loss possible"
+    },
+    "irreversible": {
+      "label": "Irreversible",
+      "color": "red",
+      "icon": "✗",
+      "action": "Cannot be undone"
+    }
+  }
+}
