@@ -1,0 +1,16 @@
+{
+  "patterns": [
+    {
+      "match": "^rm\\s+-rf\\s+/",
+      "tip": "Are you attempting to wipe your system?!",
+      "safer": "Don't do it.",
+      "explain": "Deletes the root directory and everything in it."
+    },
+    {
+      "match": "docker.*prune",
+      "tip": "Running docker prune can delete things you still need.",
+      "safer": "docker image prune",
+      "explain": "A complete prune deletes down to raw, dangling, and unused content."
+    }
+  ]
+}
