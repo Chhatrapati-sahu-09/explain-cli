@@ -1,16 +1,126 @@
 {
+  "_comment": "Maps dangerous command patterns to safer alternatives.",
+
   "patterns": [
     {
-      "match": "^rm\\s+-rf\\s+/",
-      "tip": "Are you attempting to wipe your system?!",
-      "safer": "Don't do it.",
-      "explain": "Deletes the root directory and everything in it."
+      "match": "rm -rf",
+      "tip": "Preview what would be deleted first",
+      "safer": "ls -la {target}",
+      "explain": "Run ls on the target path to see exactly what would be removed before committing to deletion."
     },
     {
-      "match": "docker.*prune",
-      "tip": "Running docker prune can delete things you still need.",
-      "safer": "docker image prune",
-      "explain": "A complete prune deletes down to raw, dangling, and unused content."
+      "match": "rm -r",
+      "tip": "Preview what would be deleted first",
+      "safer": "ls -la {target}",
+      "explain": "Run ls on the target path to see exactly what would be removed before committing to deletion."
+    },
+    {
+      "match": "find .* -delete",
+      "tip": "Preview matched files first (remove -delete flag)",
+      "safer": "find . -name '*.log'   # remove -delete to preview",
+      "explain": "Run the find command without -delete to see which files match before permanently deleting them."
+    },
+    {
+      "match": "curl.*\\|.*bash",
+      "tip": "Download the script first, inspect it, then run",
+      "safer": "curl -o /tmp/install.sh {url} && cat /tmp/install.sh",
+      "explain": "Save the script to a file, read it to verify it is safe, then run it with: bash /tmp/install.sh"
+    },
+    {
+      "match": "wget.*\\|.*bash",
+      "tip": "Download the script first, inspect it, then run",
+      "safer": "wget -O /tmp/install.sh {url} && cat /tmp/install.sh",
+      "explain": "Save the script to a file, read it to verify it is safe, then run it with: bash /tmp/install.sh"
+    },
+    {
+      "match": "chmod.*777",
+      "tip": "Use more restrictive permissions instead",
+      "safer": "chmod 755 {target}   # directories\nchmod 644 {target}   # files",
+      "explain": "755 allows owner to write while others can only read/execute. 777 lets anyone modify your files."
+    },
+    {
+      "match": "dd if=.* of=/dev/",
+      "tip": "Double-check device with lsblk before running",
+      "safer": "lsblk   # verify the target device",
+      "explain": "Always run lsblk to confirm which /dev/sdX is your intended target. One letter off wipes the wrong disk."
+    },
+    {
+      "match": "rsync.*--delete",
+      "tip": "Do a dry-run first with -n flag",
+      "safer": "rsync -av --delete --dry-run src/ dest/",
+      "explain": "Add --dry-run to rsync to preview exactly which files would be deleted at the destination."
+    },
+    {
+      "match": "git push.*--force",
+      "tip": "Use --force-with-lease instead",
+      "safer": "git push --force-with-lease",
+      "explain": "--force-with-lease only force pushes if no one else has pushed since your last fetch — much safer."
+    },
+    {
+      "match": "git reset --hard",
+      "tip": "Stash your work first",
+      "safer": "git stash   # save work first\n# then: git reset --hard",
+      "explain": "git stash saves your current changes before the reset so you can recover them with git stash pop."
+    },
+    {
+      "match": "git clean",
+      "tip": "Preview with -n flag first",
+      "safer": "git clean -n   # dry-run: shows what would be deleted",
+      "explain": "git clean -n lists all files that would be removed without actually deleting anything."
+    },
+    {
+      "match": "crontab -r",
+      "tip": "Back up your crontab first",
+      "safer": "crontab -l > ~/crontab.backup && crontab -r",
+      "explain": "Saves your entire crontab to a backup file before deleting it. Restore with: crontab ~/crontab.backup"
+    },
+    {
+      "match": "terraform destroy",
+      "tip": "Preview the destruction plan first",
+      "safer": "terraform plan -destroy",
+      "explain": "terraform plan -destroy shows exactly what would be destroyed before you commit to it."
+    },
+    {
+      "match": "kubectl delete namespace",
+      "tip": "Export all resources before deleting",
+      "safer": "kubectl get all -n {namespace} -o yaml > backup.yaml",
+      "explain": "Export all resources to YAML before deletion so you have a record. Namespace deletion is permanent."
+    },
+    {
+      "match": "docker system prune",
+      "tip": "Preview what would be removed first",
+      "safer": "docker system df   # shows what would be freed",
+      "explain": "docker system df shows the space used by images, containers, and volumes that prune would delete."
+    },
+    {
+      "match": "sed -i",
+      "tip": "Back up the file first",
+      "safer": "sed -i.bak 's/old/new/g' {file}   # creates file.bak automatically",
+      "explain": "sed -i.bak creates a .bak backup of the original file before modifying it in place."
+    },
+    {
+      "match": "shred",
+      "tip": "Verify the target path carefully — this is permanent",
+      "safer": "ls -la {file}   # confirm target before shredding",
+      "explain": "shred overwrites data multiple times making recovery impossible. Confirm the exact file path first."
+    },
+    {
+      "match": "mkfs",
+      "tip": "Triple-check the device with lsblk",
+      "safer": "lsblk -f   # shows all devices with filesystem labels",
+      "explain": "lsblk -f shows device names, sizes, and existing filesystems. Make absolutely sure you have the right device."
+    },
+    {
+      "match": "userdel",
+      "tip": "Back up the user home directory first",
+      "safer": "tar -czf /tmp/user_backup.tar.gz /home/{username}",
+      "explain": "Create a tarball of the user home directory before deletion."
+    },
+    {
+      "match": "iptables -F",
+      "tip": "Save rules before flushing",
+      "safer": "iptables-save > /tmp/iptables.backup && iptables -F",
+      "explain": "Saves your firewall rules before flushing. Restore with: iptables-restore < /tmp/iptables.backup"
     }
   ]
 }
