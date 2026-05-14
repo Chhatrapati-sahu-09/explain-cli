@@ -243,10 +243,7 @@ def _dedup_signals(signals: list) -> list:
 
 def analyze(raw: str) -> RiskResult:
     """
-    Main entry point. Analyzes a shell command and returns a RiskResult.
-    Layer 1 = rules.json (known commands)
-    Layer 2 = heuristic scoring (unknown commands)
-    Layer 3 = LLM (Day 3)
+    Main entry point. Layer 1 → Layer 2 → Layer 3 (LLM).
     """
     raw = raw.strip()
     if not raw:
@@ -264,7 +261,8 @@ def analyze(raw: str) -> RiskResult:
     for tok in raw_tokens:
         kind, risk = _classify_token(tok, command_name)
         explanation = _explain_flag(tok, command_name) if kind == "flag" else ""
-        annotated_tokens.append(Token(text=tok, kind=kind, risk=risk, explanation=explanation))
+        annotated_tokens.append(Token(text=tok, kind=kind, risk=risk,
+                                      explanation=explanation))
 
     signals = []
     signals.extend(_detect_pipe_signals(raw))
@@ -274,13 +272,12 @@ def analyze(raw: str) -> RiskResult:
         signals.append(sudo_sig)
     signals.extend(_detect_command_signals(command_name, raw_tokens))
 
-    is_known_command = command_name in RULES["commands"]
+    is_known = command_name in RULES["commands"]
     h_score = 0
     layer = 1
 
-    if is_known_command:
-        cmd_rules = RULES["commands"][command_name]
-        base_risk = cmd_rules.get("base_risk", "safe")
+    if is_known:
+        base_risk = RULES["commands"][command_name].get("base_risk", "safe")
         overall_risk = base_risk
         for sig in signals:
             overall_risk = _max_risk(overall_risk, sig.risk)
@@ -301,14 +298,56 @@ def analyze(raw: str) -> RiskResult:
             overall_risk = _max_risk(overall_risk, sig.risk)
 
     signals = _dedup_signals(signals)
-    verdict = _build_verdict(command_name, overall_risk, signals, raw, layer, h_score)
-    props = _infer_properties(raw, overall_risk, signals)
+
+    # ── Layer 3: LLM for ambiguous heuristic scores ────────────────────────
+    llm_from_cache = False
+    if layer == 2 and scorer.should_escalate_to_llm(h_score):
+        try:
+            from explain import llm as llm_module
+            signal_texts = [s.text for s in signals]
+            llm_result = llm_module.analyze(raw, signal_texts)
+            if llm_result:
+                layer = 3
+                llm_risk = llm_result.get("risk", overall_risk)
+                overall_risk = _max_risk(overall_risk, llm_risk)
+                llm_from_cache = llm_result.get("from_cache", False)
+                # Override verdict with LLM's explanation if available
+                llm_verdict = llm_result.get("verdict", "")
+                if llm_verdict:
+                    return RiskResult(
+                        raw=raw,
+                        risk=overall_risk,
+                        layer=3,
+                        tokens=annotated_tokens,
+                        signals=signals,
+                        verdict=llm_verdict,
+                        reversible=llm_result.get("reversible", "Depends"),
+                        scope=_infer_properties(raw, overall_risk, signals)["scope"],
+                        network=_infer_properties(raw, overall_risk, signals)["network"],
+                        privilege=_infer_properties(raw, overall_risk, signals)["privilege"],
+                        dry_run_suggestion=_find_suggestion(raw),
+                        heuristic_score=h_score,
+                        llm_from_cache=llm_from_cache,
+                    )
+        except Exception:
+            pass  # LLM failure is non-fatal — fall back to Layer 2 result
+
+    verdict    = _build_verdict(command_name, overall_risk, signals, raw, layer, h_score)
+    props      = _infer_properties(raw, overall_risk, signals)
     suggestion = _find_suggestion(raw)
 
     return RiskResult(
-        raw=raw, risk=overall_risk, layer=layer,
-        tokens=annotated_tokens, signals=signals, verdict=verdict,
-        reversible=props["reversible"], scope=props["scope"],
-        network=props["network"], privilege=props["privilege"],
-        dry_run_suggestion=suggestion, heuristic_score=h_score,
+        raw=raw,
+        risk=overall_risk,
+        layer=layer,
+        tokens=annotated_tokens,
+        signals=signals,
+        verdict=verdict,
+        reversible=props["reversible"],
+        scope=props["scope"],
+        network=props["network"],
+        privilege=props["privilege"],
+        dry_run_suggestion=suggestion,
+        heuristic_score=h_score,
+        llm_from_cache=llm_from_cache,
     )
