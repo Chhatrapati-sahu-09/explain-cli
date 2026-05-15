@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>explain-cli — Shell Command Risk Analyzer</title>
+    <style>
+      /* Minimal styling; same as provided earlier in Day 4 plan */
+      body {
+        background: #0f1117;
+        color: #e2e8f0;
+        font-family: system-ui, sans-serif;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 880px;
+        margin: 0 auto;
+      }
+      input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        background: #1a1d27;
+        border: 1px solid #2a2d3a;
+        color: #e2e8f0;
+      }
+      button {
+        background: #06b6d4;
+        color: #000;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        border: none;
+      }
+      .result {
+        margin-top: 1rem;
+        background: #1a1d27;
+        border: 1px solid #2a2d3a;
+        padding: 1rem;
+        border-radius: 10px;
+      }
+      .label {
+        color: #64748b;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚡ explain-cli</h1>
+      <p>Paste a shell command and get a risk score.</p>
+
+      <div>
+        <input id="cmd" placeholder="e.g. rm -rf /tmp/cache" />
+        <div style="margin-top: 0.5rem"><button id="run">Analyze</button></div>
+      </div>
+
+      <div id="out" class="result" style="display: none"></div>
+    </div>
+
+    <script>
+      const API = "http://localhost:8000";
+      document.getElementById("run").addEventListener("click", async () => {
+        const cmd = document.getElementById("cmd").value.trim();
+        if (!cmd) return;
+        const out = document.getElementById("out");
+        out.style.display = "block";
+        out.textContent = "Analyzing...";
+        try {
+          const res = await fetch(API + "/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: cmd }),
+          });
+          const data = await res.json();
+          out.innerHTML = `<div><strong>Risk:</strong> ${data.risk} — ${data.verdict}</div>`;
+        } catch (err) {
+          out.textContent =
+            "Error: Could not reach API. Start server: uvicorn api:app --reload --port 8000";
+        }
+      });
+    </script>
+  </body>
+</html>
